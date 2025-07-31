@@ -13,7 +13,7 @@ class RunwayAPI:
     }
     
     @staticmethod
-    async def create_video_from_image(image_url: str, prompt: str = "Picture became colorful, camera moves, people walking") -> Optional[str]:
+    async def create_video_from_image(image_url: str, prompt: str = "Early-1900s building photo colorized; subtle parallax depth, light ambient motion, pedestrians in 1910 dress stroll naturally.") -> Optional[str]:
         """Create video from image using Runway gen4_turbo model"""
         payload = {
             "promptImage": image_url,
