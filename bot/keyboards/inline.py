@@ -7,7 +7,21 @@ def get_location_keyboard() -> ReplyKeyboardMarkup:
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
             [KeyboardButton(text="📍 Pick Location on Map", request_location=True)],
+            [KeyboardButton(text="📎 Use Attachment Menu Instead")],
             [KeyboardButton(text="📱 How to pick any location")]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    return keyboard
+
+
+def get_attachment_guide_keyboard() -> ReplyKeyboardMarkup:
+    """Get keyboard for attachment menu guidance"""
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📱 Show me how to use attachment menu")],
+            [KeyboardButton(text="🔙 Back to location button")]
         ],
         resize_keyboard=True,
         one_time_keyboard=True

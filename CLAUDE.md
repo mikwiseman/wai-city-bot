@@ -44,6 +44,11 @@ This is a Python project named "wai-city" located at `/Users/mikwiseman/Document
   - Added help button explaining how to drop pins anywhere on map
   - Users can navigate map and select any location, not just current
   - Clear instructions throughout the flow
+- Enhanced location selection guidance:
+  - Added explicit instructions to use "Send Selected Location" option
+  - Created attachment menu guide as alternative method
+  - Multiple help options to ensure users understand how to pick any location
+  - Visual step-by-step guides for both methods
 
 ---
 *This file helps AI assistants understand the project structure and common tasks. Update it as you learn more about the project.*

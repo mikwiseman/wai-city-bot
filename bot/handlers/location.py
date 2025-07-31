@@ -2,7 +2,7 @@ from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
 from bot.states.user_states import UserStates
-from bot.keyboards.inline import get_location_keyboard, get_location_options_keyboard
+from bot.keyboards.inline import get_location_keyboard, get_location_options_keyboard, get_attachment_guide_keyboard
 from bot.handlers.photo import process_location
 from bot.services.openai_service import OpenAIService
 
@@ -16,11 +16,12 @@ async def cmd_start(message: Message, state: FSMContext):
     await message.answer(
         "Welcome! I can help you find historical photos of places and create videos from them.\n\n"
         "You can:\n"
-        "• Tap the button to open Telegram's map\n"
-        "• Navigate and drop a pin anywhere on the map\n"
+        "• Tap location button → Choose **'Send Selected Location'**\n"
+        "• Use 📎 attachment menu for more control\n"
         "• Or type an address (e.g., 'Times Square, New York')\n\n"
-        "💡 Tip: You can share location anytime during our chat!",
-        reply_markup=get_location_keyboard()
+        "⚠️ **Important**: Choose 'Send Selected Location' to pick ANY place on the map!",
+        reply_markup=get_location_keyboard(),
+        parse_mode="Markdown"
     )
 
 
@@ -28,16 +29,69 @@ async def cmd_start(message: Message, state: FSMContext):
 async def handle_location_help(message: Message):
     """Show help for picking any location on map"""
     await message.answer(
-        "📍 **How to pick ANY location on Telegram's map:**\n\n"
+        "📍 **How to pick ANY location (not just current):**\n\n"
+        "**Option 1 - Using Location Button:**\n"
         "1. Tap '📍 Pick Location on Map' button\n"
-        "2. The map will open with your current location\n"
-        "3. **Navigate to any place** by:\n"
-        "   • Pinching to zoom in/out\n"
-        "   • Dragging to move around\n"
-        "4. **Touch and hold** to drop a pin anywhere\n"
+        "2. **IMPORTANT**: Choose **'Send Selected Location'** ✅\n"
+        "   (NOT 'Send My Current Location')\n"
+        "3. The map opens - navigate anywhere!\n"
+        "4. Tap to place pin at desired location\n"
         "5. Tap 'Send Selected Location'\n\n"
-        "💡 You're not limited to your current location - explore and pick any place in the world!",
+        "**Option 2 - Using Attachment Menu:**\n"
+        "1. Tap 📎 (paperclip) in message field\n"
+        "2. Select 'Location'\n"
+        "3. Choose **'Send Selected Location'**\n"
+        "4. Navigate map and pick any place\n\n"
+        "⚠️ **Common mistake**: Don't use 'Send My Current Location' - that only sends GPS position!",
         parse_mode="Markdown"
+    )
+
+
+@router.message(F.text == "📎 Use Attachment Menu Instead")
+async def handle_attachment_menu_guide(message: Message):
+    """Guide user to use attachment menu"""
+    await message.answer(
+        "📎 **Using Attachment Menu for Better Control:**\n\n"
+        "1. Look for 📎 (paperclip) next to message field\n"
+        "2. Tap it and select **'Location'**\n"
+        "3. You'll see 3 options:\n"
+        "   • Send My Current Location (GPS only)\n"
+        "   • **Send Selected Location** ← USE THIS! ✅\n"
+        "   • Share Live Location\n\n"
+        "4. Choose **'Send Selected Location'**\n"
+        "5. Navigate the map freely\n"
+        "6. Tap to drop pin anywhere\n"
+        "7. Send the selected location\n\n"
+        "This gives you full control over location selection! 🗺️",
+        reply_markup=get_attachment_guide_keyboard(),
+        parse_mode="Markdown"
+    )
+
+
+@router.message(F.text == "📱 Show me how to use attachment menu")
+async def handle_attachment_detailed_guide(message: Message):
+    """Show detailed attachment menu guide"""
+    await message.answer(
+        "📍 **Step-by-Step Visual Guide:**\n\n"
+        "1️⃣ Find the 📎 icon at bottom of chat\n"
+        "2️⃣ Tap 📎 → See menu popup\n"
+        "3️⃣ Select 'Location' 📍\n"
+        "4️⃣ **CRITICAL**: Select 'Send Selected Location'\n"
+        "5️⃣ Map opens → Zoom out to see more\n"
+        "6️⃣ Navigate to desired area\n"
+        "7️⃣ Tap once to place pin 📌\n"
+        "8️⃣ Tap 'Send Selected Location' button\n\n"
+        "✨ **Pro tip**: Pinch to zoom, drag to move around the map!",
+        parse_mode="Markdown"
+    )
+
+
+@router.message(F.text == "🔙 Back to location button")
+async def handle_back_to_location(message: Message, state: FSMContext):
+    """Go back to location button keyboard"""
+    await message.answer(
+        "Back to location options. Remember to choose 'Send Selected Location'!",
+        reply_markup=get_location_keyboard()
     )
 
 
@@ -68,8 +122,10 @@ async def handle_new_location_from_photo(callback: CallbackQuery, state: FSMCont
     await state.set_state(UserStates.waiting_for_location)
     await callback.message.answer(
         "Please pick a new location:\n\n"
-        "💡 Remember: You can navigate the map and drop a pin anywhere!",
-        reply_markup=get_location_keyboard()
+        "💡 **Reminder**: Use 'Send Selected Location' option to pick ANY place on the map!\n"
+        "Or use the attachment menu for more control.",
+        reply_markup=get_location_keyboard(),
+        parse_mode="Markdown"
     )
     await callback.answer()
 
@@ -110,7 +166,7 @@ async def handle_address_text(message: Message, state: FSMContext):
             "Please try:\n"
             "• A more specific address\n"
             "• Including city and country\n"
-            "• Or pick a location on the map:",
+            "• Or use 'Send Selected Location' from location menu:",
             reply_markup=get_location_keyboard()
         )
 
@@ -149,7 +205,9 @@ async def handle_request_new_location(callback: CallbackQuery, state: FSMContext
     await state.set_state(UserStates.waiting_for_location)
     await callback.message.answer(
         "Please pick a new location:\n\n"
-        "💡 Remember: You can navigate the map and drop a pin anywhere!",
-        reply_markup=get_location_keyboard()
+        "💡 **Reminder**: Use 'Send Selected Location' option to pick ANY place on the map!\n"
+        "Or use the attachment menu for more control.",
+        reply_markup=get_location_keyboard(),
+        parse_mode="Markdown"
     )
     await callback.answer()
