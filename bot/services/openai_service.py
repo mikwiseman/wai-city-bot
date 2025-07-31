@@ -54,3 +54,42 @@ Return only the photo index number (0-based) of the best choice."""
                 return min(available_photos, key=lambda x: x.get("year", 9999))
         
         return None
+    
+    @staticmethod
+    async def geocode_address(address: str) -> Optional[Dict[str, float]]:
+        """Use OpenAI o3 model to convert address to coordinates"""
+        prompt = f"""Convert the following address to geographic coordinates (latitude and longitude).
+Address: {address}
+
+Return ONLY a JSON object with the coordinates in this exact format:
+{{"latitude": <number>, "longitude": <number>}}
+
+If the address is ambiguous or cannot be geocoded, return:
+{{"error": "Cannot geocode address"}}"""
+        
+        try:
+            response = await client.chat.completions.create(
+                model="o3",
+                messages=[
+                    {"role": "user", "content": prompt}
+                ]
+            )
+            
+            content = response.choices[0].message.content.strip()
+            result = json.loads(content)
+            
+            if "error" in result:
+                return None
+                
+            if "latitude" in result and "longitude" in result:
+                return {
+                    "latitude": float(result["latitude"]),
+                    "longitude": float(result["longitude"])
+                }
+            
+        except (json.JSONDecodeError, ValueError, KeyError) as e:
+            print(f"Error parsing geocoding response: {e}")
+        except Exception as e:
+            print(f"OpenAI API error during geocoding: {e}")
+        
+        return None

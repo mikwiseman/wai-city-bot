@@ -29,6 +29,15 @@ This is a Python project named "wai-city" located at `/Users/mikwiseman/Document
 ## Recent Context
 - Project initialized with first commit
 - Currently on main branch
+- Added address geocoding functionality:
+  - Users can now send text addresses instead of just sharing location
+  - OpenAI o3 model converts addresses to coordinates
+  - Integrated with existing photo finding flow
+- Enhanced location handling:
+  - Location sharing now works from any state (not just waiting_for_location)
+  - Added options menu when location is shared (use as-is or change)
+  - Users can open location in Google Maps to verify/adjust
+  - Smooth flow for changing locations during photo browsing
 
 ---
 *This file helps AI assistants understand the project structure and common tasks. Update it as you learn more about the project.*
