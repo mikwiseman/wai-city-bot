@@ -25,12 +25,6 @@ def get_location_options_keyboard(lat: float, lon: float) -> InlineKeyboardMarku
     )
     builder.row(
         InlineKeyboardButton(
-            text="📍 Open in Google Maps", 
-            url=f"https://www.google.com/maps?q={lat},{lon}&z=16"
-        )
-    )
-    builder.row(
-        InlineKeyboardButton(
             text="🗺 Change location (send new one)", 
             callback_data="request_new_location"
         )

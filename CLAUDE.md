@@ -36,7 +36,8 @@ This is a Python project named "wai-city" located at `/Users/mikwiseman/Document
 - Enhanced location handling:
   - Location sharing now works from any state (not just waiting_for_location)
   - Added options menu when location is shared (use as-is or change)
-  - Users can open location in Google Maps to verify/adjust
+  - Locations are now displayed as Telegram venues (native map view)
+  - Users can tap venues to open in their preferred maps app
   - Smooth flow for changing locations during photo browsing
 
 ---

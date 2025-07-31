@@ -29,9 +29,16 @@ async def handle_location(message: Message, state: FSMContext):
     lat = message.location.latitude
     lon = message.location.longitude
     
+    # Send the location as a venue to show on Telegram's map
+    await message.answer_venue(
+        latitude=lat,
+        longitude=lon,
+        title="📍 Selected Location",
+        address=f"Coordinates: {lat:.6f}, {lon:.6f}"
+    )
+    
     # Ask user what they want to do with this location
     await message.answer(
-        f"📍 Location received: {lat:.6f}, {lon:.6f}\n\n"
         "What would you like to do with this location?",
         reply_markup=get_location_options_keyboard(lat, lon)
     )
@@ -68,7 +75,15 @@ async def handle_address_text(message: Message, state: FSMContext):
         await state.update_data(latitude=lat, longitude=lon, shown_photos=[])
         await state.set_state(UserStates.selecting_photo)
         
-        await message.answer(f"📍 Location found: {lat:.6f}, {lon:.6f}\n\nSearching for historical photos...")
+        # Send the found location as a venue
+        await message.answer_venue(
+            latitude=lat,
+            longitude=lon,
+            title="📍 Location found",
+            address=address
+        )
+        
+        await message.answer("Searching for historical photos...")
         await process_location(message, state, lat, lon)
     else:
         await message.answer(
@@ -93,10 +108,16 @@ async def handle_use_location(callback: CallbackQuery, state: FSMContext):
     await state.update_data(latitude=lat, longitude=lon, shown_photos=[])
     await state.set_state(UserStates.selecting_photo)
     
-    # Edit the message to show we're processing
-    await callback.message.edit_text(
-        f"📍 Using location: {lat:.6f}, {lon:.6f}\n\nSearching for historical photos..."
+    # Send venue to show the location being used
+    await callback.message.answer_venue(
+        latitude=lat,
+        longitude=lon,
+        title="📍 Using this location",
+        address=f"Searching for historical photos..."
     )
+    
+    # Delete the options message
+    await callback.message.delete()
     
     # Process the location
     await process_location(callback.message, state, lat, lon)
