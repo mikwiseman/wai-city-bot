@@ -1,0 +1,29 @@
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.utils.keyboard import InlineKeyboardBuilder
+
+
+def get_location_keyboard() -> ReplyKeyboardMarkup:
+    """Get keyboard with location request button"""
+    keyboard = ReplyKeyboardMarkup(
+        keyboard=[
+            [KeyboardButton(text="📍 Share Location", request_location=True)]
+        ],
+        resize_keyboard=True,
+        one_time_keyboard=True
+    )
+    return keyboard
+
+
+def get_photo_actions_keyboard() -> InlineKeyboardMarkup:
+    """Get inline keyboard for photo actions"""
+    builder = InlineKeyboardBuilder()
+    builder.row(
+        InlineKeyboardButton(text="📍 Send new location", callback_data="new_location")
+    )
+    builder.row(
+        InlineKeyboardButton(text="🖼 Another photo", callback_data="another_photo")
+    )
+    builder.row(
+        InlineKeyboardButton(text="🎬 Make video", callback_data="make_video")
+    )
+    return builder.as_markup()
