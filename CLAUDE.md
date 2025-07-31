@@ -39,6 +39,11 @@ This is a Python project named "wai-city" located at `/Users/mikwiseman/Document
   - Locations are now displayed as Telegram venues (native map view)
   - Users can tap venues to open in their preferred maps app
   - Smooth flow for changing locations during photo browsing
+- Map picker functionality:
+  - Updated UI to guide users on using Telegram's map picker
+  - Added help button explaining how to drop pins anywhere on map
+  - Users can navigate map and select any location, not just current
+  - Clear instructions throughout the flow
 
 ---
 *This file helps AI assistants understand the project structure and common tasks. Update it as you learn more about the project.*

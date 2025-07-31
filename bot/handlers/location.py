@@ -16,10 +16,28 @@ async def cmd_start(message: Message, state: FSMContext):
     await message.answer(
         "Welcome! I can help you find historical photos of places and create videos from them.\n\n"
         "You can:\n"
-        "• Share your location using the button below\n"
-        "• Type an address (e.g., 'Times Square, New York')\n"
-        "• Share location anytime to search that area",
+        "• Tap the button to open Telegram's map\n"
+        "• Navigate and drop a pin anywhere on the map\n"
+        "• Or type an address (e.g., 'Times Square, New York')\n\n"
+        "💡 Tip: You can share location anytime during our chat!",
         reply_markup=get_location_keyboard()
+    )
+
+
+@router.message(F.text == "📱 How to pick any location")
+async def handle_location_help(message: Message):
+    """Show help for picking any location on map"""
+    await message.answer(
+        "📍 **How to pick ANY location on Telegram's map:**\n\n"
+        "1. Tap '📍 Pick Location on Map' button\n"
+        "2. The map will open with your current location\n"
+        "3. **Navigate to any place** by:\n"
+        "   • Pinching to zoom in/out\n"
+        "   • Dragging to move around\n"
+        "4. **Touch and hold** to drop a pin anywhere\n"
+        "5. Tap 'Send Selected Location'\n\n"
+        "💡 You're not limited to your current location - explore and pick any place in the world!",
+        parse_mode="Markdown"
     )
 
 
@@ -49,7 +67,8 @@ async def handle_new_location_from_photo(callback: CallbackQuery, state: FSMCont
     """Handle when user wants to send new location from photo actions"""
     await state.set_state(UserStates.waiting_for_location)
     await callback.message.answer(
-        "Please share a new location or type an address:",
+        "Please pick a new location:\n\n"
+        "💡 Remember: You can navigate the map and drop a pin anywhere!",
         reply_markup=get_location_keyboard()
     )
     await callback.answer()
@@ -91,7 +110,7 @@ async def handle_address_text(message: Message, state: FSMContext):
             "Please try:\n"
             "• A more specific address\n"
             "• Including city and country\n"
-            "• Or share your location using the button below:",
+            "• Or pick a location on the map:",
             reply_markup=get_location_keyboard()
         )
 
@@ -129,7 +148,8 @@ async def handle_request_new_location(callback: CallbackQuery, state: FSMContext
     """Handle when user wants to change location"""
     await state.set_state(UserStates.waiting_for_location)
     await callback.message.answer(
-        "Please share a new location or type an address:",
+        "Please pick a new location:\n\n"
+        "💡 Remember: You can navigate the map and drop a pin anywhere!",
         reply_markup=get_location_keyboard()
     )
     await callback.answer()

@@ -6,7 +6,8 @@ def get_location_keyboard() -> ReplyKeyboardMarkup:
     """Get keyboard with location request button"""
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📍 Share Location", request_location=True)]
+            [KeyboardButton(text="📍 Pick Location on Map", request_location=True)],
+            [KeyboardButton(text="📱 How to pick any location")]
         ],
         resize_keyboard=True,
         one_time_keyboard=True
