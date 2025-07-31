@@ -20,31 +20,31 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
     current_photo = data.get("current_photo")
     
     if not current_photo:
-        await callback.message.answer("❌ Error: No photo selected")
+        await callback.message.answer("❌ Ошибка: Фото не выбрано")
         return
     
     # Get photo URL
     photo_url = PastVuAPI.get_photo_url(current_photo.get("file"))
     
     # Start video generation
-    await callback.message.answer("🎬 Starting video generation...")
+    await callback.message.answer("🎬 Начинаю создание видео...")
     
     # Create video task
     task_id = await RunwayAPI.create_video_from_image(photo_url)
     
     if not task_id:
-        await callback.message.answer("❌ Failed to start video generation. Please try again.")
+        await callback.message.answer("❌ Не удалось начать создание видео. Пожалуйста, попробуйте ещё раз.")
         await state.set_state(UserStates.selecting_photo)
         return
     
     # Progress message
-    progress_message = await callback.message.answer("⏳ Progress: 0%")
+    progress_message = await callback.message.answer("⏳ Прогресс: 0%")
     
     # Progress callback
     async def update_progress(progress):
         try:
             progress_percent = int(float(progress) * 100)
-            await progress_message.edit_text(f"⏳ Progress: {progress_percent}%")
+            await progress_message.edit_text(f"⏳ Прогресс: {progress_percent}%")
         except:
             pass
     
@@ -52,23 +52,23 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
     video_url = await RunwayAPI.wait_for_video(task_id, update_progress)
     
     if video_url:
-        await progress_message.edit_text("✅ Video generation complete!")
+        await progress_message.edit_text("✅ Создание видео завершено!")
         
         # Send video
         await callback.message.answer_video(
             video=video_url,
             caption=(
-                f"🎥 Video generated from: {current_photo.get('title', 'Historical photo')}\n"
-                f"📅 Year: {current_photo.get('year', 'Unknown')}"
+                f"🎥 Видео создано из: {current_photo.get('title', 'Историческая фотография')}\n"
+                f"📅 Год: {current_photo.get('year', 'Неизвестно')}"
             )
         )
         
         # Offer options to continue
         await callback.message.answer(
-            "What would you like to do next?",
+            "Что вы хотите сделать дальше?",
             reply_markup=get_photo_actions_keyboard()
         )
     else:
-        await progress_message.edit_text("❌ Video generation failed. Please try again.")
+        await progress_message.edit_text("❌ Создание видео не удалось. Пожалуйста, попробуйте ещё раз.")
     
     await state.set_state(UserStates.selecting_photo)

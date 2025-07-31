@@ -6,9 +6,10 @@ def get_location_keyboard() -> ReplyKeyboardMarkup:
     """Get keyboard with location request button"""
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📍 Pick Location on Map", request_location=True)],
-            [KeyboardButton(text="📎 Use Attachment Menu Instead")],
-            [KeyboardButton(text="📱 How to pick any location")]
+            [KeyboardButton(text="📍 Выбрать место на карте", request_location=True)],
+            [KeyboardButton(text="🎲 Случайная локация")],
+            [KeyboardButton(text="📎 Использовать меню вложений")],
+            [KeyboardButton(text="📱 Как выбрать любое место")]
         ],
         resize_keyboard=True,
         one_time_keyboard=True
@@ -20,8 +21,8 @@ def get_attachment_guide_keyboard() -> ReplyKeyboardMarkup:
     """Get keyboard for attachment menu guidance"""
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📱 Show me how to use attachment menu")],
-            [KeyboardButton(text="🔙 Back to location button")]
+            [KeyboardButton(text="📱 Покажи как использовать меню вложений")],
+            [KeyboardButton(text="🔙 Вернуться к кнопке локации")]
         ],
         resize_keyboard=True,
         one_time_keyboard=True
@@ -34,13 +35,13 @@ def get_location_options_keyboard(lat: float, lon: float) -> InlineKeyboardMarku
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
-            text="✅ Use this location", 
+            text="✅ Использовать текущую локацию", 
             callback_data=f"use_location:{lat}:{lon}"
         )
     )
     builder.row(
         InlineKeyboardButton(
-            text="🗺 Change location (send new one)", 
+            text="🗺 Изменить место (отправить новое)", 
             callback_data="request_new_location"
         )
     )
@@ -51,12 +52,12 @@ def get_photo_actions_keyboard() -> InlineKeyboardMarkup:
     """Get inline keyboard for photo actions"""
     builder = InlineKeyboardBuilder()
     builder.row(
-        InlineKeyboardButton(text="📍 Send new location", callback_data="new_location")
+        InlineKeyboardButton(text="📍 Отправить новое место", callback_data="new_location")
     )
     builder.row(
-        InlineKeyboardButton(text="🖼 Another photo", callback_data="another_photo")
+        InlineKeyboardButton(text="🖼 Другое фото", callback_data="another_photo")
     )
     builder.row(
-        InlineKeyboardButton(text="🎬 Make video", callback_data="make_video")
+        InlineKeyboardButton(text="🎬 Создать видео", callback_data="make_video")
     )
     return builder.as_markup()

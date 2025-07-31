@@ -5,6 +5,7 @@ from bot.states.user_states import UserStates
 from bot.keyboards.inline import get_location_keyboard, get_location_options_keyboard, get_attachment_guide_keyboard
 from bot.handlers.photo import process_location
 from bot.services.openai_service import OpenAIService
+import random
 
 router = Router()
 
@@ -81,17 +82,41 @@ async def handle_attachment_detailed_guide(message: Message):
         "6️⃣ Navigate to desired area\n"
         "7️⃣ Tap once to place pin 📌\n"
         "8️⃣ Tap 'Send Selected Location' button\n\n"
-        "✨ **Pro tip**: Pinch to zoom, drag to move around the map!",
+        "✨ **Совет**: Щипком увеличивайте/уменьшайте, перетаскивайте для перемещения!",
         parse_mode="Markdown"
     )
 
 
-@router.message(F.text == "🔙 Back to location button")
+@router.message(F.text == "🔙 Вернуться к кнопке локации")
 async def handle_back_to_location(message: Message, state: FSMContext):
     """Go back to location button keyboard"""
     await message.answer(
-        "Back to location options. Remember to choose 'Send Selected Location'!",
+        "Возврат к выбору локации. Помните: выбирайте 'Отправить выбранную геопозицию'!",
         reply_markup=get_location_keyboard()
+    )
+
+
+@router.message(F.text == "🎲 Случайная локация")
+async def handle_random_location(message: Message, state: FSMContext):
+    """Generate random location coordinates"""
+    # Генерируем случайные координаты
+    # Широта от -90 до 90
+    lat = random.uniform(-90, 90)
+    # Долгота от -180 до 180
+    lon = random.uniform(-180, 180)
+    
+    # Отправляем локацию как venue
+    await message.answer_venue(
+        latitude=lat,
+        longitude=lon,
+        title="🎲 Случайная локация",
+        address=f"Координаты: {lat:.6f}, {lon:.6f}"
+    )
+    
+    # Спрашиваем, что делать с этой локацией
+    await message.answer(
+        "Сгенерирована случайная локация! Что вы хотите с ней сделать?",
+        reply_markup=get_location_options_keyboard(lat, lon)
     )
 
 
@@ -105,13 +130,13 @@ async def handle_location(message: Message, state: FSMContext):
     await message.answer_venue(
         latitude=lat,
         longitude=lon,
-        title="📍 Selected Location",
-        address=f"Coordinates: {lat:.6f}, {lon:.6f}"
+        title="📍 Выбранное место",
+        address=f"Координаты: {lat:.6f}, {lon:.6f}"
     )
     
     # Ask user what they want to do with this location
     await message.answer(
-        "What would you like to do with this location?",
+        "Что вы хотите сделать с этим местом?",
         reply_markup=get_location_options_keyboard(lat, lon)
     )
 
@@ -121,9 +146,9 @@ async def handle_new_location_from_photo(callback: CallbackQuery, state: FSMCont
     """Handle when user wants to send new location from photo actions"""
     await state.set_state(UserStates.waiting_for_location)
     await callback.message.answer(
-        "Please pick a new location:\n\n"
-        "💡 **Reminder**: Use 'Send Selected Location' option to pick ANY place on the map!\n"
-        "Or use the attachment menu for more control.",
+        "Пожалуйста, выберите новое место:\n\n"
+        "💡 **Напоминание**: Используйте 'Отправить выбранную геопозицию' чтобы выбрать ЛЮБОЕ место!\n"
+        "Или используйте меню вложений для большего контроля.",
         reply_markup=get_location_keyboard(),
         parse_mode="Markdown"
     )
@@ -138,7 +163,7 @@ async def handle_address_text(message: Message, state: FSMContext):
         return
     
     address = message.text.strip()
-    await message.answer(f"🔍 Searching for location: {address}\n\nPlease wait while I find the coordinates...")
+    await message.answer(f"🔍 Ищу место: {address}\n\nПодождите, пока я найду координаты...")
     
     # Use OpenAI to geocode the address
     coordinates = await OpenAIService.geocode_address(address)
@@ -154,19 +179,19 @@ async def handle_address_text(message: Message, state: FSMContext):
         await message.answer_venue(
             latitude=lat,
             longitude=lon,
-            title="📍 Location found",
+            title="📍 Место найдено",
             address=address
         )
         
-        await message.answer("Searching for historical photos...")
+        await message.answer("Ищу исторические фотографии...")
         await process_location(message, state, lat, lon)
     else:
         await message.answer(
-            "❌ Sorry, I couldn't find the coordinates for that address.\n\n"
-            "Please try:\n"
-            "• A more specific address\n"
-            "• Including city and country\n"
-            "• Or use 'Send Selected Location' from location menu:",
+            "❌ К сожалению, я не смог найти координаты этого адреса.\n\n"
+            "Попробуйте:\n"
+            "• Более точный адрес\n"
+            "• Указать город и страну\n"
+            "• Или используйте 'Отправить выбранную геопозицию' из меню локации:",
             reply_markup=get_location_keyboard()
         )
 
@@ -187,8 +212,8 @@ async def handle_use_location(callback: CallbackQuery, state: FSMContext):
     await callback.message.answer_venue(
         latitude=lat,
         longitude=lon,
-        title="📍 Using this location",
-        address=f"Searching for historical photos..."
+        title="📍 Использую это место",
+        address=f"Ищу исторические фотографии..."
     )
     
     # Delete the options message
@@ -204,9 +229,9 @@ async def handle_request_new_location(callback: CallbackQuery, state: FSMContext
     """Handle when user wants to change location"""
     await state.set_state(UserStates.waiting_for_location)
     await callback.message.answer(
-        "Please pick a new location:\n\n"
-        "💡 **Reminder**: Use 'Send Selected Location' option to pick ANY place on the map!\n"
-        "Or use the attachment menu for more control.",
+        "Пожалуйста, выберите новое место:\n\n"
+        "💡 **Напоминание**: Используйте 'Отправить выбранную геопозицию' чтобы выбрать ЛЮБОЕ место!\n"
+        "Или используйте меню вложений для большего контроля.",
         reply_markup=get_location_keyboard(),
         parse_mode="Markdown"
     )

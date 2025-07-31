@@ -16,8 +16,8 @@ async def process_location(message: Message, state: FSMContext, lat: float, lon:
     
     if not photos:
         await message.answer(
-            "❌ No historical photos found for this location.\n"
-            "Please try another location.",
+            "❌ Для этого места не найдено исторических фотографий.\n"
+            "Пожалуйста, попробуйте другое место.",
             reply_markup=get_location_keyboard()
         )
         await state.set_state(UserStates.waiting_for_location)
@@ -32,8 +32,8 @@ async def process_location(message: Message, state: FSMContext, lat: float, lon:
     
     if not selected_photo:
         await message.answer(
-            "❌ No more photos available for this location.\n"
-            "Please try another location.",
+            "❌ Больше нет фотографий для этого места.\n"
+            "Пожалуйста, попробуйте другое место.",
             reply_markup=get_location_keyboard()
         )
         await state.set_state(UserStates.waiting_for_location)
@@ -50,9 +50,9 @@ async def process_location(message: Message, state: FSMContext, lat: float, lon:
     # Send photo
     photo_url = PastVuAPI.get_photo_url(selected_photo.get("file"))
     caption = (
-        f"📷 {selected_photo.get('title', 'Historical photo')}\n"
-        f"📅 Year: {selected_photo.get('year', 'Unknown')}\n"
-        f"📍 Location: {selected_photo.get('geo', [lat, lon])}"
+        f"📷 {selected_photo.get('title', 'Историческая фотография')}\n"
+        f"📅 Год: {selected_photo.get('year', 'Неизвестно')}\n"
+        f"📍 Место: {selected_photo.get('geo', [lat, lon])}"
     )
     
     await message.answer_photo(
@@ -69,7 +69,7 @@ async def handle_new_location(callback: CallbackQuery, state: FSMContext):
     await state.clear()
     await state.set_state(UserStates.waiting_for_location)
     await callback.message.answer(
-        "Please share your new location:",
+        "Пожалуйста, отправьте новое место:",
         reply_markup=get_location_keyboard()
     )
 
@@ -83,5 +83,5 @@ async def handle_another_photo(callback: CallbackQuery, state: FSMContext):
     lat = data.get("latitude")
     lon = data.get("longitude")
     
-    await callback.message.answer("🔍 Searching for another photo...")
+    await callback.message.answer("🔍 Ищу другую фотографию...")
     await process_location(callback.message, state, lat, lon)
