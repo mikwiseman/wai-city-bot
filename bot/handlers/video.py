@@ -44,23 +44,24 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
         await state.set_state(UserStates.selecting_photo)
         return
     
-    # Stop initial animation and create progress message
+    # Stop initial animation and create progress message with percentage
     animator.stop()
     await init_progress_msg.delete()
     
-    # Progress message with percentage
+    # Start animated progress with percentage
     progress_animator = ProgressAnimator()
-    progress_message = await callback.message.answer("⏳ Прогресс: 0%")
+    progress_message = await progress_animator.start_animated_progress_with_percentage(
+        callback.message,
+        "⏳ Обработка видео:",
+        initial_percentage=0,
+        update_interval=0.5
+    )
     
-    # Progress callback with animated dots
+    # Progress callback - just update percentage
     async def update_progress(progress):
         try:
             progress_percent = int(float(progress) * 100)
-            await progress_animator.update_with_percentage(
-                progress_message,
-                "⏳ Прогресс:",
-                progress_percent
-            )
+            await progress_animator.update_percentage(progress_percent)
         except:
             pass
     
@@ -68,6 +69,8 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
     video_url = await RunwayAPI.wait_for_video(task_id, update_progress)
     
     if video_url:
+        # Stop animation before final message
+        progress_animator.stop()
         try:
             await progress_message.edit_text("✅ Создание видео завершено!")
         except:
@@ -88,6 +91,8 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
             reply_markup=get_photo_actions_keyboard()
         )
     else:
+        # Stop animation before error message
+        progress_animator.stop()
         try:
             await progress_message.edit_text("❌ Создание видео не удалось. Пожалуйста, попробуйте ещё раз.")
         except:
