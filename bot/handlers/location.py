@@ -141,11 +141,14 @@ async def handle_address_text(message: Message, state: FSMContext):
     
     address = message.text.strip()
     
+    # Show what we're searching for
+    await message.answer(f"📍 Ищу место: {address}")
+    
     # Start animated progress
     animator = ProgressAnimator()
     progress_msg = await animator.start_animated_progress(
         message,
-        f"🔍 Ищу место: {address}\n\nОпределяю координаты"
+        "🔍 Определяю координаты"
     )
     
     # Use OpenAI to geocode the address
