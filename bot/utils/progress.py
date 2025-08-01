@@ -14,26 +14,67 @@ class ProgressAnimator:
         self.progress_message: Optional[Message] = None
         self.base_text = ""
         self.start_time = 0
+        self.emoji_patterns = {
+            "search": ["🔍", "🔎"],
+            "clock": ["⏳", "⌛"],
+            "loading": ["🔄", "🔃"],
+            "photo": ["📸", "📷"],
+            "video": ["🎬", "🎥"]
+        }
     
     async def start_animated_progress(
         self, 
         message: Message, 
         base_text: str,
-        update_interval: float = 0.5
+        update_interval: float = 0.5,
+        emoji_pattern: str = None
     ) -> Message:
-        """Start animated progress with dots"""
+        """Start animated progress with dots and optional emoji rotation"""
         self.is_running = True
         self.start_time = time.time()
-        progress_msg = await message.answer(base_text)
+        self.base_text = base_text
+        
+        # Extract emoji from base_text if not specified
+        if emoji_pattern is None and base_text:
+            if "🔍" in base_text or "🔎" in base_text:
+                emoji_pattern = "search"
+            elif "📸" in base_text or "📷" in base_text:
+                emoji_pattern = "photo"
+            elif "🎬" in base_text or "🎥" in base_text:
+                emoji_pattern = "video"
+            elif "⏳" in base_text or "⌛" in base_text:
+                emoji_pattern = "clock"
+        
+        # Store the message as instance variable
+        self.progress_message = await message.answer(base_text)
         
         async def animate():
             dots_states = ["", ".", "..", "..."]
-            current_index = 0
+            dots_index = 0
+            emoji_index = 0
+            emojis = self.emoji_patterns.get(emoji_pattern, []) if emoji_pattern else []
+            
+            # Remove emoji from base text if we're rotating it
+            clean_text = base_text
+            if emojis:
+                for emoji in emojis:
+                    clean_text = clean_text.replace(emoji, "").strip()
             
             while self.is_running:
                 try:
-                    await progress_msg.edit_text(f"{base_text}{dots_states[current_index]}")
-                    current_index = (current_index + 1) % len(dots_states)
+                    # Build the animated text
+                    if emojis:
+                        animated_text = f"{emojis[emoji_index]} {clean_text}{dots_states[dots_index]}"
+                    else:
+                        animated_text = f"{base_text}{dots_states[dots_index]}"
+                    
+                    await self.progress_message.edit_text(animated_text)
+                    
+                    # Update indices
+                    dots_index = (dots_index + 1) % len(dots_states)
+                    if emojis:
+                        emoji_index = (emoji_index + 1) % len(emojis)
+                    
                     await asyncio.sleep(update_interval)
                 except Exception:
                     # Message might be deleted or invalid
@@ -42,7 +83,7 @@ class ProgressAnimator:
         self.current_task = asyncio.create_task(animate())
         # Ensure first frame is shown
         await asyncio.sleep(0.1)
-        return progress_msg
+        return self.progress_message
     
     def stop(self):
         """Stop the animation"""
@@ -71,25 +112,46 @@ class ProgressAnimator:
         message: Message,
         base_text: str,
         initial_percentage: int = 0,
-        update_interval: float = 0.5
+        update_interval: float = 0.5,
+        emoji_pattern: str = "clock"
     ) -> Message:
-        """Start animated progress with percentage that continuously animates dots"""
+        """Start animated progress with percentage and emoji rotation"""
         self.is_running = True
         self.start_time = time.time()
         self.current_percentage = initial_percentage
         self.base_text = base_text
+        
+        # Extract emoji pattern from base_text if not specified
+        if emoji_pattern == "clock" and base_text:
+            if "🔍" in base_text or "🔎" in base_text:
+                emoji_pattern = "search"
+            elif "📸" in base_text or "📷" in base_text:
+                emoji_pattern = "photo"
+            elif "🎬" in base_text or "🎥" in base_text:
+                emoji_pattern = "video"
+        
         self.progress_message = await message.answer(f"{base_text} {initial_percentage}%")
         
         async def animate():
             dots_states = ["", ".", "..", "..."]
-            current_index = 0
+            dots_index = 0
+            emoji_index = 0
+            emojis = self.emoji_patterns.get(emoji_pattern, ["⏳", "⌛"])
+            
+            # Remove emoji from base text if we're rotating it
+            clean_text = base_text
+            for emoji in emojis:
+                clean_text = clean_text.replace(emoji, "").strip()
             
             while self.is_running:
                 try:
-                    await self.progress_message.edit_text(
-                        f"{self.base_text} {self.current_percentage}%{dots_states[current_index]}"
-                    )
-                    current_index = (current_index + 1) % len(dots_states)
+                    animated_text = f"{emojis[emoji_index]} {clean_text} {self.current_percentage}%{dots_states[dots_index]}"
+                    await self.progress_message.edit_text(animated_text)
+                    
+                    # Update indices
+                    dots_index = (dots_index + 1) % len(dots_states)
+                    emoji_index = (emoji_index + 1) % len(emojis)
+                    
                     await asyncio.sleep(update_interval)
                 except Exception:
                     # Message might be deleted or invalid
