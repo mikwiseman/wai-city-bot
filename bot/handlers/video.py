@@ -5,7 +5,7 @@ from bot.states.user_states import UserStates
 from bot.services.pastvu import PastVuAPI
 from bot.services.runway import RunwayAPI
 from bot.keyboards.inline import get_photo_actions_keyboard
-from bot.utils.progress import ProgressAnimator
+from bot.utils.progress import ProgressAnimator, PercentageProgressAnimator
 import asyncio
 
 router = Router()
@@ -29,33 +29,43 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
     
     # Start video generation with animated progress
     animator = ProgressAnimator()
-    init_progress_msg = await animator.start_animated_progress(
+    init_progress_msg = await animator.send_progress_message(
         callback.message,
         "🎬 Начинаю создание видео"
     )
     
-    # Create video task
-    task_id = await RunwayAPI.create_video_from_image(photo_url)
+    # Create video task with animation
+    task_id = await animator.animate_until_complete(
+        init_progress_msg,
+        RunwayAPI.create_video_from_image(photo_url),
+        update_interval=0.5
+    )
     
     if not task_id:
-        animator.stop()
         await init_progress_msg.delete()
         await callback.message.answer("❌ Не удалось начать создание видео. Пожалуйста, попробуйте ещё раз.")
         await state.set_state(UserStates.selecting_photo)
         return
     
-    # Stop initial animation and create progress message with percentage
-    animator.stop()
+    # Delete initial message
     await init_progress_msg.delete()
     
     # Start animated progress with percentage
-    progress_animator = ProgressAnimator()
-    progress_message = await progress_animator.start_animated_progress_with_percentage(
+    progress_animator = PercentageProgressAnimator()
+    progress_message = await progress_animator.send_progress_message_with_percentage(
         callback.message,
         "⏳ Обработка видео:",
         initial_percentage=0,
-        update_interval=0.5
+        emoji_pattern="clock"
     )
+    
+    # Animation task for percentage updates
+    async def animate_progress():
+        while True:
+            success = await progress_animator.update_animation_frame_with_percentage(progress_message)
+            if not success:
+                break
+            await asyncio.sleep(0.5)
     
     # Progress callback - just update percentage
     async def update_progress(progress):
@@ -65,12 +75,22 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
         except:
             pass
     
-    # Wait for video with progress updates
-    video_url = await RunwayAPI.wait_for_video(task_id, update_progress)
+    # Start animation task
+    animation_task = asyncio.create_task(animate_progress())
+    
+    try:
+        # Wait for video with progress updates
+        video_url = await RunwayAPI.wait_for_video(task_id, update_progress)
+    finally:
+        # Stop animation
+        animation_task.cancel()
+        try:
+            await animation_task
+        except asyncio.CancelledError:
+            pass
     
     if video_url:
-        # Stop animation before final message
-        progress_animator.stop()
+        # Update to completion message
         try:
             await progress_message.edit_text("✅ Создание видео завершено!")
         except:
@@ -91,8 +111,7 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
             reply_markup=get_photo_actions_keyboard()
         )
     else:
-        # Stop animation before error message
-        progress_animator.stop()
+        # Update to error message
         try:
             await progress_message.edit_text("❌ Создание видео не удалось. Пожалуйста, попробуйте ещё раз.")
         except:

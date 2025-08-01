@@ -104,16 +104,19 @@ async def handle_web_app_data(message: Message, state: FSMContext):
         
         # Start searching for photos with animated progress
         animator = ProgressAnimator()
-        progress_msg = await animator.start_animated_progress(
+        progress_msg = await animator.send_progress_message(
             message, 
             "🔍 Ищу исторические фотографии"
         )
         
-        await process_location(message, state, lat, lon)
+        # Search with animation
+        await animator.animate_until_complete(
+            progress_msg,
+            process_location(message, state, lat, lon),
+            update_interval=0.5
+        )
         
-        # Ensure minimum display time
-        await animator.ensure_minimum_display_time(2.0)
-        animator.stop()
+        # Delete progress message
         await progress_msg.delete()
         
     except (json.JSONDecodeError, KeyError):
@@ -148,16 +151,17 @@ async def handle_address_text(message: Message, state: FSMContext):
     
     # Start animated progress
     animator = ProgressAnimator()
-    progress_msg = await animator.start_animated_progress(
+    progress_msg = await animator.send_progress_message(
         message,
         "🔍 Определяю координаты"
     )
     
-    # Use OpenAI to geocode the address
-    coordinates = await OpenAIService.geocode_address(address)
-    
-    # Ensure animation was shown for minimum time
-    await animator.ensure_minimum_display_time(2.0)
+    # Use OpenAI to geocode the address with animation
+    coordinates = await animator.animate_until_complete(
+        progress_msg,
+        OpenAIService.geocode_address(address),
+        update_interval=0.5
+    )
     
     if coordinates:
         lat = coordinates["latitude"]
@@ -174,27 +178,27 @@ async def handle_address_text(message: Message, state: FSMContext):
             address=address
         )
         
-        # Continue with photo search animation
-        animator.stop()
+        # Delete progress message
         await progress_msg.delete()
         
         # Start new animation for photo search
         photo_animator = ProgressAnimator()
-        photo_progress_msg = await photo_animator.start_animated_progress(
+        photo_progress_msg = await photo_animator.send_progress_message(
             message,
             "📸 Ищу исторические фотографии"
         )
         
-        await process_location(message, state, lat, lon)
+        # Search for photos with animation
+        await photo_animator.animate_until_complete(
+            photo_progress_msg,
+            process_location(message, state, lat, lon),
+            update_interval=0.5
+        )
         
-        # Ensure minimum display time
-        await photo_animator.ensure_minimum_display_time(2.0)
-        photo_animator.stop()
+        # Delete progress message
         await photo_progress_msg.delete()
     else:
-        # Ensure animation was shown for minimum time
-        await animator.ensure_minimum_display_time(2.0)
-        animator.stop()
+        # Delete progress message
         await progress_msg.delete()
         
         await message.answer(
@@ -229,7 +233,7 @@ async def handle_use_location(callback: CallbackQuery, state: FSMContext):
     
     # Start animated progress for photo search
     animator = ProgressAnimator()
-    progress_msg = await animator.start_animated_progress(
+    progress_msg = await animator.send_progress_message(
         callback.message,
         "🔍 Ищу исторические фотографии"
     )
@@ -237,12 +241,14 @@ async def handle_use_location(callback: CallbackQuery, state: FSMContext):
     # Delete the options message
     await callback.message.delete()
     
-    # Process the location
-    await process_location(callback.message, state, lat, lon)
+    # Process the location with animation
+    await animator.animate_until_complete(
+        progress_msg,
+        process_location(callback.message, state, lat, lon),
+        update_interval=0.5
+    )
     
-    # Ensure minimum display time and stop animation
-    await animator.ensure_minimum_display_time(2.0)
-    animator.stop()
+    # Delete progress message
     await progress_msg.delete()
     
     await callback.answer()

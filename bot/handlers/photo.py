@@ -86,14 +86,17 @@ async def handle_another_photo(callback: CallbackQuery, state: FSMContext):
     
     # Start animated progress
     animator = ProgressAnimator()
-    progress_msg = await animator.start_animated_progress(
+    progress_msg = await animator.send_progress_message(
         callback.message,
         "🔍 Ищу другую фотографию"
     )
     
-    await process_location(callback.message, state, lat, lon)
+    # Search with animation
+    await animator.animate_until_complete(
+        progress_msg,
+        process_location(callback.message, state, lat, lon),
+        update_interval=0.5
+    )
     
-    # Ensure minimum display time and stop animation
-    await animator.ensure_minimum_display_time(2.0)
-    animator.stop()
+    # Delete progress message
     await progress_msg.delete()
