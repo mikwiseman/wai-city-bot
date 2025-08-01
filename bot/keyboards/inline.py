@@ -9,7 +9,7 @@ def get_location_keyboard() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(
                 text="🗺️ Выбрать место на карте", 
-                web_app=WebAppInfo(url=f"{WEBAPP_URL}/static/map_location_picker.html")
+                web_app=WebAppInfo(url=f"{WEBAPP_URL}/map_location_picker.html")
             )],
             [KeyboardButton(text="🎲 Случайная локация")],
             [KeyboardButton(text="📝 Ввести адрес")]
@@ -26,7 +26,7 @@ def get_simple_location_keyboard() -> ReplyKeyboardMarkup:
         keyboard=[
             [KeyboardButton(
                 text="🗺️ Выбрать место на карте", 
-                web_app=WebAppInfo(url=f"{WEBAPP_URL}/static/map_location_picker.html")
+                web_app=WebAppInfo(url=f"{WEBAPP_URL}/map_location_picker.html")
             )],
             [KeyboardButton(text="📝 Ввести адрес")]
         ],
