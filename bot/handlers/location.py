@@ -1,8 +1,9 @@
 from aiogram import Router, F
 from aiogram.types import Message, CallbackQuery
 from aiogram.fsm.context import FSMContext
+import json
 from bot.states.user_states import UserStates
-from bot.keyboards.inline import get_location_keyboard, get_location_options_keyboard, get_attachment_guide_keyboard
+from bot.keyboards.inline import get_location_keyboard, get_location_options_keyboard, get_simple_location_keyboard
 from bot.handlers.photo import process_location
 from bot.services.openai_service import OpenAIService
 import random
@@ -15,84 +16,30 @@ async def cmd_start(message: Message, state: FSMContext):
     """Handle /start command"""
     await state.set_state(UserStates.waiting_for_location)
     await message.answer(
-        "Welcome! I can help you find historical photos of places and create videos from them.\n\n"
-        "You can:\n"
-        "• Tap location button → Choose **'Send Selected Location'**\n"
-        "• Use 📎 attachment menu for more control\n"
-        "• Or type an address (e.g., 'Times Square, New York')\n\n"
-        "⚠️ **Important**: Choose 'Send Selected Location' to pick ANY place on the map!",
-        reply_markup=get_location_keyboard(),
-        parse_mode="Markdown"
-    )
-
-
-@router.message(F.text == "📱 How to pick any location")
-async def handle_location_help(message: Message):
-    """Show help for picking any location on map"""
-    await message.answer(
-        "📍 **How to pick ANY location (not just current):**\n\n"
-        "**Option 1 - Using Location Button:**\n"
-        "1. Tap '📍 Pick Location on Map' button\n"
-        "2. **IMPORTANT**: Choose **'Send Selected Location'** ✅\n"
-        "   (NOT 'Send My Current Location')\n"
-        "3. The map opens - navigate anywhere!\n"
-        "4. Tap to place pin at desired location\n"
-        "5. Tap 'Send Selected Location'\n\n"
-        "**Option 2 - Using Attachment Menu:**\n"
-        "1. Tap 📎 (paperclip) in message field\n"
-        "2. Select 'Location'\n"
-        "3. Choose **'Send Selected Location'**\n"
-        "4. Navigate map and pick any place\n\n"
-        "⚠️ **Common mistake**: Don't use 'Send My Current Location' - that only sends GPS position!",
-        parse_mode="Markdown"
-    )
-
-
-@router.message(F.text == "📎 Use Attachment Menu Instead")
-async def handle_attachment_menu_guide(message: Message):
-    """Guide user to use attachment menu"""
-    await message.answer(
-        "📎 **Using Attachment Menu for Better Control:**\n\n"
-        "1. Look for 📎 (paperclip) next to message field\n"
-        "2. Tap it and select **'Location'**\n"
-        "3. You'll see 3 options:\n"
-        "   • Send My Current Location (GPS only)\n"
-        "   • **Send Selected Location** ← USE THIS! ✅\n"
-        "   • Share Live Location\n\n"
-        "4. Choose **'Send Selected Location'**\n"
-        "5. Navigate the map freely\n"
-        "6. Tap to drop pin anywhere\n"
-        "7. Send the selected location\n\n"
-        "This gives you full control over location selection! 🗺️",
-        reply_markup=get_attachment_guide_keyboard(),
-        parse_mode="Markdown"
-    )
-
-
-@router.message(F.text == "📱 Show me how to use attachment menu")
-async def handle_attachment_detailed_guide(message: Message):
-    """Show detailed attachment menu guide"""
-    await message.answer(
-        "📍 **Step-by-Step Visual Guide:**\n\n"
-        "1️⃣ Find the 📎 icon at bottom of chat\n"
-        "2️⃣ Tap 📎 → See menu popup\n"
-        "3️⃣ Select 'Location' 📍\n"
-        "4️⃣ **CRITICAL**: Select 'Send Selected Location'\n"
-        "5️⃣ Map opens → Zoom out to see more\n"
-        "6️⃣ Navigate to desired area\n"
-        "7️⃣ Tap once to place pin 📌\n"
-        "8️⃣ Tap 'Send Selected Location' button\n\n"
-        "✨ **Совет**: Щипком увеличивайте/уменьшайте, перетаскивайте для перемещения!",
-        parse_mode="Markdown"
-    )
-
-
-@router.message(F.text == "🔙 Вернуться к кнопке локации")
-async def handle_back_to_location(message: Message, state: FSMContext):
-    """Go back to location button keyboard"""
-    await message.answer(
-        "Возврат к выбору локации. Помните: выбирайте 'Отправить выбранную геопозицию'!",
+        "🏛️ Добро пожаловать! Я помогу вам найти исторические фотографии любых мест и создать из них видео.\n\n"
+        "🗺️ Выберите место на интерактивной карте или введите адрес - и я найду старинные фотографии этого места!",
         reply_markup=get_location_keyboard()
+    )
+
+
+
+
+
+
+
+
+
+
+@router.message(F.text == "📝 Ввести адрес")
+async def handle_address_input(message: Message, state: FSMContext):
+    """Handle address input request"""
+    await state.set_state(UserStates.waiting_for_location)
+    await message.answer(
+        "📝 Введите адрес места, которое вы хотите найти:\n\n"
+        "Например:\n"
+        "• Красная площадь, Москва\n"
+        "• Times Square, New York\n"
+        "• Эйфелева башня, Париж"
     )
 
 
@@ -141,16 +88,45 @@ async def handle_location(message: Message, state: FSMContext):
     )
 
 
+@router.message(F.web_app_data)
+async def handle_web_app_data(message: Message, state: FSMContext):
+    """Handle data from Web App (map location picker)"""
+    try:
+        # Parse the JSON data from Web App
+        data = json.loads(message.web_app_data.data)
+        lat = data["latitude"]
+        lon = data["longitude"]
+        
+        # Update state with location data
+        await state.update_data(latitude=lat, longitude=lon, shown_photos=[])
+        await state.set_state(UserStates.selecting_photo)
+        
+        # Send the location as a venue to show on Telegram's map
+        await message.answer_venue(
+            latitude=lat,
+            longitude=lon,
+            title="🗺️ Выбранное на карте место",
+            address=f"Координаты: {lat:.6f}, {lon:.6f}"
+        )
+        
+        # Start searching for photos
+        await message.answer("🔍 Ищу исторические фотографии...")
+        await process_location(message, state, lat, lon)
+        
+    except (json.JSONDecodeError, KeyError):
+        await message.answer(
+            "❌ Ошибка при обработке данных карты. Попробуйте выбрать место заново.",
+            reply_markup=get_simple_location_keyboard()
+        )
+
+
 @router.callback_query(F.data == "new_location")
 async def handle_new_location_from_photo(callback: CallbackQuery, state: FSMContext):
     """Handle when user wants to send new location from photo actions"""
     await state.set_state(UserStates.waiting_for_location)
     await callback.message.answer(
-        "Пожалуйста, выберите новое место:\n\n"
-        "💡 **Напоминание**: Используйте 'Отправить выбранную геопозицию' чтобы выбрать ЛЮБОЕ место!\n"
-        "Или используйте меню вложений для большего контроля.",
-        reply_markup=get_location_keyboard(),
-        parse_mode="Markdown"
+        "📍 Пожалуйста, выберите новое место:",
+        reply_markup=get_simple_location_keyboard()
     )
     await callback.answer()
 
@@ -191,8 +167,8 @@ async def handle_address_text(message: Message, state: FSMContext):
             "Попробуйте:\n"
             "• Более точный адрес\n"
             "• Указать город и страну\n"
-            "• Или используйте 'Отправить выбранную геопозицию' из меню локации:",
-            reply_markup=get_location_keyboard()
+            "• Или используйте интерактивную карту:",
+            reply_markup=get_simple_location_keyboard()
         )
 
 
@@ -229,10 +205,7 @@ async def handle_request_new_location(callback: CallbackQuery, state: FSMContext
     """Handle when user wants to change location"""
     await state.set_state(UserStates.waiting_for_location)
     await callback.message.answer(
-        "Пожалуйста, выберите новое место:\n\n"
-        "💡 **Напоминание**: Используйте 'Отправить выбранную геопозицию' чтобы выбрать ЛЮБОЕ место!\n"
-        "Или используйте меню вложений для большего контроля.",
-        reply_markup=get_location_keyboard(),
-        parse_mode="Markdown"
+        "📍 Пожалуйста, выберите новое место:",
+        reply_markup=get_simple_location_keyboard()
     )
     await callback.answer()

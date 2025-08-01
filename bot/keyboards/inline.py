@@ -1,15 +1,18 @@
-from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton
+from aiogram.types import InlineKeyboardMarkup, InlineKeyboardButton, ReplyKeyboardMarkup, KeyboardButton, WebAppInfo
 from aiogram.utils.keyboard import InlineKeyboardBuilder
+from bot.utils.config import WEBAPP_URL
 
 
 def get_location_keyboard() -> ReplyKeyboardMarkup:
     """Get keyboard with location request button"""
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📍 Выбрать место на карте", request_location=True)],
+            [KeyboardButton(
+                text="🗺️ Выбрать место на карте", 
+                web_app=WebAppInfo(url=f"{WEBAPP_URL}/static/map_location_picker.html")
+            )],
             [KeyboardButton(text="🎲 Случайная локация")],
-            [KeyboardButton(text="📎 Использовать меню вложений")],
-            [KeyboardButton(text="📱 Как выбрать любое место")]
+            [KeyboardButton(text="📝 Ввести адрес")]
         ],
         resize_keyboard=True,
         one_time_keyboard=True
@@ -17,12 +20,15 @@ def get_location_keyboard() -> ReplyKeyboardMarkup:
     return keyboard
 
 
-def get_attachment_guide_keyboard() -> ReplyKeyboardMarkup:
-    """Get keyboard for attachment menu guidance"""
+def get_simple_location_keyboard() -> ReplyKeyboardMarkup:
+    """Get simplified location keyboard"""
     keyboard = ReplyKeyboardMarkup(
         keyboard=[
-            [KeyboardButton(text="📱 Покажи как использовать меню вложений")],
-            [KeyboardButton(text="🔙 Вернуться к кнопке локации")]
+            [KeyboardButton(
+                text="🗺️ Выбрать место на карте", 
+                web_app=WebAppInfo(url=f"{WEBAPP_URL}/static/map_location_picker.html")
+            )],
+            [KeyboardButton(text="📝 Ввести адрес")]
         ],
         resize_keyboard=True,
         one_time_keyboard=True

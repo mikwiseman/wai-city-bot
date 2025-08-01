@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Выбор места на карте</title>
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            background: var(--tg-theme-bg-color, #ffffff);
+            color: var(--tg-theme-text-color, #000000);
+        }
+        
+        #map {
+            flex: 1;
+            min-height: 300px;
+        }
+        
+        .controls {
+            padding: 16px;
+            background: var(--tg-theme-secondary-bg-color, #f8f8f8);
+            border-top: 1px solid var(--tg-theme-hint-color, #e0e0e0);
+        }
+        
+        .location-info {
+            margin-bottom: 12px;
+            font-size: 14px;
+            color: var(--tg-theme-hint-color, #888888);
+            text-align: center;
+        }
+        
+        .selected-location {
+            margin-bottom: 16px;
+            padding: 12px;
+            background: var(--tg-theme-bg-color, #ffffff);
+            border: 1px solid var(--tg-theme-hint-color, #e0e0e0);
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .coord-display {
+            font-family: monospace;
+            color: var(--tg-theme-link-color, #0088cc);
+        }
+        
+        .select-button {
+            width: 100%;
+            padding: 12px;
+            background: var(--tg-theme-button-color, #0088cc);
+            color: var(--tg-theme-button-text-color, #ffffff);
+            border: none;
+            border-radius: 8px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: opacity 0.2s;
+        }
+        
+        .select-button:hover {
+            opacity: 0.8;
+        }
+        
+        .select-button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+        
+        .instructions {
+            text-align: center;
+            color: var(--tg-theme-hint-color, #888888);
+            font-size: 12px;
+            margin-bottom: 12px;
+        }
+        
+        .leaflet-control-attribution {
+            font-size: 10px !important;
+        }
+    </style>
+</head>
+<body>
+    <div id="map"></div>
+    
+    <div class="controls">
+        <div class="instructions">
+            Нажмите на карту, чтобы выбрать место
+        </div>
+        
+        <div class="selected-location" id="locationDisplay" style="display: none;">
+            <div>📍 Выбранное место:</div>
+            <div class="coord-display" id="coordinates">Координаты не выбраны</div>
+        </div>
+        
+        <button class="select-button" id="selectButton" disabled onclick="selectLocation()">
+            Выбрать это место
+        </button>
+    </div>
+
+    <script>
+        // Initialize Telegram Web App
+        const tg = window.Telegram.WebApp;
+        tg.ready();
+        tg.expand();
+        
+        // Set theme
+        document.documentElement.style.setProperty('--tg-color-scheme', tg.colorScheme);
+        
+        // Initialize map
+        let map;
+        let selectedMarker = null;
+        let selectedLat = null;
+        let selectedLon = null;
+        
+        // Try to get user's location, fallback to world view
+        if (navigator.geolocation) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    initMap(position.coords.latitude, position.coords.longitude, 13);
+                },
+                function(error) {
+                    // Fallback to world view
+                    initMap(55.7558, 37.6176, 10); // Moscow as default
+                }
+            );
+        } else {
+            initMap(55.7558, 37.6176, 10); // Moscow as default
+        }
+        
+        function initMap(lat, lon, zoom) {
+            map = L.map('map').setView([lat, lon], zoom);
+            
+            // Add tile layer (OpenStreetMap)
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+            
+            // Add click handler
+            map.on('click', function(e) {
+                selectLocationOnMap(e.latlng.lat, e.latlng.lng);
+            });
+        }
+        
+        function selectLocationOnMap(lat, lon) {
+            selectedLat = lat;
+            selectedLon = lon;
+            
+            // Remove previous marker if exists
+            if (selectedMarker) {
+                map.removeLayer(selectedMarker);
+            }
+            
+            // Add new marker
+            selectedMarker = L.marker([lat, lon]).addTo(map);
+            
+            // Update UI
+            document.getElementById('coordinates').textContent = 
+                `${lat.toFixed(6)}, ${lon.toFixed(6)}`;
+            document.getElementById('locationDisplay').style.display = 'block';
+            document.getElementById('selectButton').disabled = false;
+        }
+        
+        function selectLocation() {
+            if (selectedLat !== null && selectedLon !== null) {
+                // Send data back to Telegram bot
+                const data = {
+                    latitude: selectedLat,
+                    longitude: selectedLon
+                };
+                
+                tg.sendData(JSON.stringify(data));
+                tg.close();
+            }
+        }
+        
+        // Handle back button
+        tg.onEvent('backButtonClicked', function() {
+            tg.close();
+        });
+        
+        // Show back button
+        tg.BackButton.show();
+    </script>
+</body>
+</html>
