@@ -34,7 +34,7 @@ Return only the photo index number (0-based) of the best choice."""
         try:
             # Using the new o3 model with Responses API
             response = await client.chat.completions.create(
-                model="o3",
+                model="gpt-4.1-mini",
                 messages=[
                     {"role": "user", "content": prompt}
                 ]
@@ -69,7 +69,7 @@ If the address is ambiguous or cannot be geocoded, return:
         
         try:
             response = await client.chat.completions.create(
-                model="o3",
+                model="gpt-4.1-mini",
                 messages=[
                     {"role": "user", "content": prompt}
                 ]

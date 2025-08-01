@@ -5,6 +5,7 @@ from bot.states.user_states import UserStates
 from bot.services.pastvu import PastVuAPI
 from bot.services.openai_service import OpenAIService
 from bot.keyboards.inline import get_photo_actions_keyboard, get_location_keyboard
+from bot.utils.progress import ProgressAnimator
 
 router = Router()
 
@@ -83,5 +84,15 @@ async def handle_another_photo(callback: CallbackQuery, state: FSMContext):
     lat = data.get("latitude")
     lon = data.get("longitude")
     
-    await callback.message.answer("🔍 Ищу другую фотографию...")
+    # Start animated progress
+    animator = ProgressAnimator()
+    progress_msg = await animator.start_animated_progress(
+        callback.message,
+        "🔍 Ищу другую фотографию"
+    )
+    
     await process_location(callback.message, state, lat, lon)
+    
+    # Stop animation
+    animator.stop()
+    await progress_msg.delete()

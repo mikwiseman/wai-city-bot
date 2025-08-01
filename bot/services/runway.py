@@ -57,8 +57,9 @@ class RunwayAPI:
     @staticmethod
     async def wait_for_video(task_id: str, progress_callback=None) -> Optional[str]:
         """Wait for video generation to complete with progress updates"""
-        max_attempts = 60  # 3 minutes max
+        max_attempts = 120  # 6 minutes max
         attempt = 0
+        last_progress = -1
         
         while attempt < max_attempts:
             status_data = await RunwayAPI.get_task_status(task_id)
@@ -73,11 +74,18 @@ class RunwayAPI:
                 return None
             
             # Call progress callback if provided
-            if progress_callback and status == "RUNNING":
-                progress = status_data.get("progress", "0")
-                await progress_callback(progress)
+            if progress_callback:
+                if status == "RUNNING":
+                    progress = float(status_data.get("progress", 0))
+                    # Update only if progress changed significantly
+                    if abs(progress - last_progress) > 0.01:
+                        await progress_callback(progress)
+                        last_progress = progress
+                elif status == "PENDING":
+                    # Show initial progress for pending status
+                    await progress_callback(0.0)
             
-            await asyncio.sleep(3)  # Wait 3 seconds before next check
+            await asyncio.sleep(1.5)  # Check more frequently - every 1.5 seconds
             attempt += 1
         
         return None

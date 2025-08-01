@@ -6,6 +6,7 @@ from bot.states.user_states import UserStates
 from bot.keyboards.inline import get_location_keyboard, get_location_options_keyboard, get_simple_location_keyboard
 from bot.handlers.photo import process_location
 from bot.services.openai_service import OpenAIService
+from bot.utils.progress import ProgressAnimator
 import random
 
 router = Router()
@@ -101,9 +102,17 @@ async def handle_web_app_data(message: Message, state: FSMContext):
             address=f"Координаты: {lat:.6f}, {lon:.6f}"
         )
         
-        # Start searching for photos
-        await message.answer("🔍 Ищу исторические фотографии...")
+        # Start searching for photos with animated progress
+        animator = ProgressAnimator()
+        progress_msg = await animator.start_animated_progress(
+            message, 
+            "🔍 Ищу исторические фотографии"
+        )
+        
         await process_location(message, state, lat, lon)
+        
+        animator.stop()
+        await progress_msg.delete()
         
     except (json.JSONDecodeError, KeyError):
         await message.answer(
@@ -131,7 +140,13 @@ async def handle_address_text(message: Message, state: FSMContext):
         return
     
     address = message.text.strip()
-    await message.answer(f"🔍 Ищу место: {address}\n\nПодождите, пока я найду координаты...")
+    
+    # Start animated progress
+    animator = ProgressAnimator()
+    progress_msg = await animator.start_animated_progress(
+        message,
+        f"🔍 Ищу место: {address}\n\nОпределяю координаты"
+    )
     
     # Use OpenAI to geocode the address
     coordinates = await OpenAIService.geocode_address(address)
@@ -151,9 +166,25 @@ async def handle_address_text(message: Message, state: FSMContext):
             address=address
         )
         
-        await message.answer("Ищу исторические фотографии...")
+        # Continue with photo search animation
+        animator.stop()
+        await progress_msg.delete()
+        
+        # Start new animation for photo search
+        photo_animator = ProgressAnimator()
+        photo_progress_msg = await photo_animator.start_animated_progress(
+            message,
+            "📸 Ищу исторические фотографии"
+        )
+        
         await process_location(message, state, lat, lon)
+        
+        photo_animator.stop()
+        await photo_progress_msg.delete()
     else:
+        animator.stop()
+        await progress_msg.delete()
+        
         await message.answer(
             "❌ К сожалению, я не смог найти координаты этого адреса.\n\n"
             "Попробуйте:\n"
@@ -181,7 +212,14 @@ async def handle_use_location(callback: CallbackQuery, state: FSMContext):
         latitude=lat,
         longitude=lon,
         title="📍 Использую это место",
-        address=f"Ищу исторические фотографии..."
+        address=f"Координаты: {lat:.6f}, {lon:.6f}"
+    )
+    
+    # Start animated progress for photo search
+    animator = ProgressAnimator()
+    progress_msg = await animator.start_animated_progress(
+        callback.message,
+        "🔍 Ищу исторические фотографии"
     )
     
     # Delete the options message
@@ -189,6 +227,11 @@ async def handle_use_location(callback: CallbackQuery, state: FSMContext):
     
     # Process the location
     await process_location(callback.message, state, lat, lon)
+    
+    # Stop animation
+    animator.stop()
+    await progress_msg.delete()
+    
     await callback.answer()
 
 

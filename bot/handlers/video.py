@@ -5,6 +5,7 @@ from bot.states.user_states import UserStates
 from bot.services.pastvu import PastVuAPI
 from bot.services.runway import RunwayAPI
 from bot.keyboards.inline import get_photo_actions_keyboard
+from bot.utils.progress import ProgressAnimator
 import asyncio
 
 router = Router()
@@ -26,25 +27,40 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
     # Get photo URL
     photo_url = PastVuAPI.get_photo_url(current_photo.get("file"))
     
-    # Start video generation
-    await callback.message.answer("🎬 Начинаю создание видео...")
+    # Start video generation with animated progress
+    animator = ProgressAnimator()
+    init_progress_msg = await animator.start_animated_progress(
+        callback.message,
+        "🎬 Начинаю создание видео"
+    )
     
     # Create video task
     task_id = await RunwayAPI.create_video_from_image(photo_url)
     
     if not task_id:
+        animator.stop()
+        await init_progress_msg.delete()
         await callback.message.answer("❌ Не удалось начать создание видео. Пожалуйста, попробуйте ещё раз.")
         await state.set_state(UserStates.selecting_photo)
         return
     
-    # Progress message
+    # Stop initial animation and create progress message
+    animator.stop()
+    await init_progress_msg.delete()
+    
+    # Progress message with percentage
+    progress_animator = ProgressAnimator()
     progress_message = await callback.message.answer("⏳ Прогресс: 0%")
     
-    # Progress callback
+    # Progress callback with animated dots
     async def update_progress(progress):
         try:
             progress_percent = int(float(progress) * 100)
-            await progress_message.edit_text(f"⏳ Прогресс: {progress_percent}%")
+            await progress_animator.update_with_percentage(
+                progress_message,
+                "⏳ Прогресс:",
+                progress_percent
+            )
         except:
             pass
     
@@ -52,7 +68,10 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
     video_url = await RunwayAPI.wait_for_video(task_id, update_progress)
     
     if video_url:
-        await progress_message.edit_text("✅ Создание видео завершено!")
+        try:
+            await progress_message.edit_text("✅ Создание видео завершено!")
+        except:
+            pass
         
         # Send video
         await callback.message.answer_video(
@@ -69,6 +88,9 @@ async def handle_make_video(callback: CallbackQuery, state: FSMContext):
             reply_markup=get_photo_actions_keyboard()
         )
     else:
-        await progress_message.edit_text("❌ Создание видео не удалось. Пожалуйста, попробуйте ещё раз.")
+        try:
+            await progress_message.edit_text("❌ Создание видео не удалось. Пожалуйста, попробуйте ещё раз.")
+        except:
+            pass
     
     await state.set_state(UserStates.selecting_photo)
