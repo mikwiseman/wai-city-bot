@@ -22,14 +22,6 @@ async def cmd_start(message: Message, state: FSMContext):
     )
 
 
-
-
-
-
-
-
-
-
 @router.message(F.text == "📝 Ввести адрес")
 async def handle_address_input(message: Message, state: FSMContext):
     """Handle address input request"""

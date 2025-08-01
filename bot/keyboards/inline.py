@@ -41,7 +41,7 @@ def get_location_options_keyboard(lat: float, lon: float) -> InlineKeyboardMarku
     builder = InlineKeyboardBuilder()
     builder.row(
         InlineKeyboardButton(
-            text="✅ Использовать текущую локацию", 
+            text="✅ Использовать эту локацию", 
             callback_data=f"use_location:{lat}:{lon}"
         )
     )
