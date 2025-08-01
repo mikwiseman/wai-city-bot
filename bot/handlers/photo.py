@@ -93,6 +93,7 @@ async def handle_another_photo(callback: CallbackQuery, state: FSMContext):
     
     await process_location(callback.message, state, lat, lon)
     
-    # Stop animation
+    # Ensure minimum display time and stop animation
+    await animator.ensure_minimum_display_time(2.0)
     animator.stop()
     await progress_msg.delete()

@@ -111,6 +111,8 @@ async def handle_web_app_data(message: Message, state: FSMContext):
         
         await process_location(message, state, lat, lon)
         
+        # Ensure minimum display time
+        await animator.ensure_minimum_display_time(2.0)
         animator.stop()
         await progress_msg.delete()
         
@@ -154,6 +156,9 @@ async def handle_address_text(message: Message, state: FSMContext):
     # Use OpenAI to geocode the address
     coordinates = await OpenAIService.geocode_address(address)
     
+    # Ensure animation was shown for minimum time
+    await animator.ensure_minimum_display_time(2.0)
+    
     if coordinates:
         lat = coordinates["latitude"]
         lon = coordinates["longitude"]
@@ -182,9 +187,13 @@ async def handle_address_text(message: Message, state: FSMContext):
         
         await process_location(message, state, lat, lon)
         
+        # Ensure minimum display time
+        await photo_animator.ensure_minimum_display_time(2.0)
         photo_animator.stop()
         await photo_progress_msg.delete()
     else:
+        # Ensure animation was shown for minimum time
+        await animator.ensure_minimum_display_time(2.0)
         animator.stop()
         await progress_msg.delete()
         
@@ -231,7 +240,8 @@ async def handle_use_location(callback: CallbackQuery, state: FSMContext):
     # Process the location
     await process_location(callback.message, state, lat, lon)
     
-    # Stop animation
+    # Ensure minimum display time and stop animation
+    await animator.ensure_minimum_display_time(2.0)
     animator.stop()
     await progress_msg.delete()
     

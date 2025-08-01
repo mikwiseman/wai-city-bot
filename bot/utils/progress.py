@@ -1,4 +1,5 @@
 import asyncio
+import time
 from typing import Optional
 from aiogram.types import Message
 
@@ -12,6 +13,7 @@ class ProgressAnimator:
         self.current_percentage = 0
         self.progress_message: Optional[Message] = None
         self.base_text = ""
+        self.start_time = 0
     
     async def start_animated_progress(
         self, 
@@ -21,6 +23,7 @@ class ProgressAnimator:
     ) -> Message:
         """Start animated progress with dots"""
         self.is_running = True
+        self.start_time = time.time()
         progress_msg = await message.answer(base_text)
         
         async def animate():
@@ -37,6 +40,8 @@ class ProgressAnimator:
                     break
         
         self.current_task = asyncio.create_task(animate())
+        # Ensure first frame is shown
+        await asyncio.sleep(0.1)
         return progress_msg
     
     def stop(self):
@@ -70,6 +75,7 @@ class ProgressAnimator:
     ) -> Message:
         """Start animated progress with percentage that continuously animates dots"""
         self.is_running = True
+        self.start_time = time.time()
         self.current_percentage = initial_percentage
         self.base_text = base_text
         self.progress_message = await message.answer(f"{base_text} {initial_percentage}%")
@@ -90,8 +96,17 @@ class ProgressAnimator:
                     break
         
         self.current_task = asyncio.create_task(animate())
+        # Ensure first frame is shown
+        await asyncio.sleep(0.1)
         return self.progress_message
     
     async def update_percentage(self, percentage: int):
         """Update just the percentage value while animation continues"""
         self.current_percentage = percentage
+    
+    async def ensure_minimum_display_time(self, min_seconds: float = 2.0):
+        """Ensure the progress was shown for minimum time"""
+        if self.start_time > 0:
+            elapsed = time.time() - self.start_time
+            if elapsed < min_seconds:
+                await asyncio.sleep(min_seconds - elapsed)

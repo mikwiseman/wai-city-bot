@@ -4,14 +4,14 @@ from typing import Optional, Dict, Any
 from bot.utils.config import RUNWAY_API_KEY
 
 video_prompt = """
-Seamlessly restore the monochrome street scene from the early 20th century into rich, hand-tinted color. Apply a gentle parallax so the virtual camera drifts slowly forward and tilts slightly left, giving subtle depth to buildings. Animate every element with period-authentic motion:
-• Pedestrians stroll, tip their hats, and chat; women’s dresses ripple naturally.
-• Horse-drawn carriages roll by with realistic wheel rotation; horses’ manes and tails swish.
-• Early motorcars chug past, exhaust pipes releasing faint puffs of white smoke.
-• Street-lamps flicker softly, and shop-signs sway.
-• If flags or bunting are present, let them flutter gently in the breeze; nearby tree branches and hanging vines react with the same wind.
-• Add wisps of chimney smoke rising and dispersing.
-Maintain film-grain texture for authenticity, but keep colors vibrant and slightly warm. Ensure all motions are loop-friendly, smooth, and era-appropriate. Finish with a subtle vignette to evoke vintage cinematography
+Hand-tint this early-1900s street photo and add subtle parallax:
+ the virtual camera drifts slowly forward, tilting left for depth.
+ Bring the scene to life—pedestrians walk, tip hats, chat; dresses flutter.
+ Horse-drawn carriages roll by, wheels turning, horses’ manes and tails swishing.
+ Early motorcars chug past, releasing faint white exhaust. Streetlamps flicker,
+ shop signs and hanging vines sway. Flags or bunting flutter in the same wind.
+ Add wisps of chimney smoke drifting upward. Keep a slight film-grain overlay,
+ warm vibrant colors, loop-smooth motions, and finish with a gentle vintage vignette.
 """
 
 
