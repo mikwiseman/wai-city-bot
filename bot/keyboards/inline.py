@@ -28,6 +28,7 @@ def get_simple_location_keyboard() -> ReplyKeyboardMarkup:
                 text="🗺️ Выбрать место на карте", 
                 web_app=WebAppInfo(url=f"{WEBAPP_URL}/map_location_picker.html")
             )],
+            [KeyboardButton(text="🎲 Случайная локация")],
             [KeyboardButton(text="📝 Ввести адрес")]
         ],
         resize_keyboard=True,

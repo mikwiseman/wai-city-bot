@@ -39,25 +39,27 @@ async def handle_address_input(message: Message, state: FSMContext):
 @router.message(F.text == "🎲 Случайная локация")
 async def handle_random_location(message: Message, state: FSMContext):
     """Generate random location coordinates"""
-    # Генерируем случайные координаты
-    # Широта от -90 до 90
     lat = random.uniform(-90, 90)
-    # Долгота от -180 до 180
     lon = random.uniform(-180, 180)
-    
-    # Отправляем локацию как venue
+    await state.update_data(latitude=lat, longitude=lon, shown_photos=[])
+    await state.set_state(UserStates.selecting_photo)
     await message.answer_venue(
         latitude=lat,
         longitude=lon,
         title="🎲 Случайная локация",
         address=f"Координаты: {lat:.6f}, {lon:.6f}"
     )
-    
-    # Спрашиваем, что делать с этой локацией
-    await message.answer(
-        "Сгенерирована случайная локация! Что вы хотите с ней сделать?",
-        reply_markup=get_location_options_keyboard(lat, lon)
+    animator = ProgressAnimator()
+    progress_msg = await animator.send_progress_message(
+        message,
+        "🔍 Ищу исторические фотографии"
     )
+    await animator.animate_until_complete(
+        progress_msg,
+        process_location(message, state, lat, lon),
+        update_interval=0.5
+    )
+    await progress_msg.delete()
 
 
 @router.message(F.location)
